@@ -1,0 +1,12 @@
+[build]
+  # The directory where your frontend code lives
+  base = "frontend"
+  # The command to build your Vite project
+  command = "npm run build"
+  # The directory Vite outputs built files to (relative to the base)
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

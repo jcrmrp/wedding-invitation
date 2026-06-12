@@ -4,7 +4,7 @@ import App from './App';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <BrowserRouter basename="/wedding-invitation">
+  <BrowserRouter basename="/">
     <App />
   </BrowserRouter>
 );
