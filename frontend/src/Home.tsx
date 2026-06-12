@@ -1565,12 +1565,13 @@ function GiftSection({
   isEditing?: boolean;
   onGcashNumberChange?: (number: string) => void;
   onQrImageChange?: (url: string) => void;
-  onQrFileUpload?: (file: File) => Promise<void>;
+onQrFileUpload?: (file: File) => Promise<void>;
 }) {
   const [copied, setCopied] = useState(false);
   const qrInputRef = useRef<HTMLInputElement>(null);
   const [qrHovered, setQrHovered] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [qrImgError, setQrImgError] = useState(false);
 
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [cropRect, setCropRect] = useState({ x: 0, y: 0, size: 100 });
@@ -1730,28 +1731,29 @@ function GiftSection({
           position: 'relative',
           width: 280,
           height: 280,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '24px',
-        }}
-          onMouseEnter={() => isEditing && setQrHovered(true)}
-          onMouseLeave={() => isEditing && setQrHovered(false)}
-        >
-            {customQrImage ? (
-              <img
-                src={customQrImage}
-                alt="GCash QR Code"
-                style={{ width: 240, height: 240, objectFit: 'contain', display: 'block' }}
-              />
-            ) : (
-              <QRCodeSVG
-                value={gcashNumber}
-                size={240}
-                fgColor={theme.heading}
-                bgColor="#ffffff"
-              />
-            )}
+display: 'flex',
+           alignItems: 'center',
+           justifyContent: 'center',
+           marginBottom: '24px',
+         }}
+         onMouseEnter={() => isEditing && setQrHovered(true)}
+         onMouseLeave={() => isEditing && setQrHovered(false)}
+         >
+           {customQrImage && !qrImgError ? (
+             <img
+               src={customQrImage}
+               alt="GCash QR Code"
+               style={{ width: 240, height: 240, objectFit: 'contain', display: 'block' }}
+               onError={() => setQrImgError(true)}
+             />
+           ) : (
+             <QRCodeSVG
+               value={gcashNumber}
+               size={240}
+               fgColor={theme.heading}
+               bgColor="#ffffff"
+             />
+           )}
 
           {/* Upload overlay in edit mode */}
           {isEditing && (
@@ -1902,17 +1904,18 @@ function GiftSection({
               Drag the square to select the QR code area, then confirm.
             </p>
 
-            <div
-              ref={cropContainerRef}
-              onMouseDown={(e) => handleCropMouseDown(e, 'move')}
-              style={{ position: 'relative', width: '100%', aspectRatio: '1/1', overflow: 'hidden', borderRadius: '12px', background: '#000', cursor: 'move', userSelect: 'none' }}
-            >
-              <img
-                src={cropImage}
-                alt="Crop preview"
-                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', pointerEvents: 'none' }}
-                draggable={false}
-              />
+<div
+               ref={cropContainerRef}
+               onMouseDown={(e) => handleCropMouseDown(e, 'move')}
+               style={{ position: 'relative', width: '100%', aspectRatio: '1/1', overflow: 'hidden', borderRadius: '12px', background: '#000', cursor: 'move', userSelect: 'none' }}
+             >
+               <img
+                 src={cropImage}
+                 alt="Crop preview"
+                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', pointerEvents: 'none' }}
+                 draggable={false}
+                 onError={() => { setCropImage(null); alert('Unable to load image. Please try another file.'); }}
+               />
 
               <div
                 onMouseDown={(e) => handleCropMouseDown(e, 'move')}

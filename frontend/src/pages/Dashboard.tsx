@@ -78,9 +78,13 @@ function Dashboard() {
 
   useEffect(() => {
     const loadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       console.log('🔐 Current user:', user);
-      if (!user) { navigate('/login'); return; }
+      if (authError || !user) {
+        console.error('❌ Authentication failed:', authError);
+        navigate('/login');
+        return;
+      }
 
       setUserEmail(user.email || '');
       userIdRef.current = user.id;
@@ -134,13 +138,20 @@ console.log('📡 Fetching wedding data for user:', user.id);
             title:           'Alex & Jordan Wedding',
           };
 
-          const seedUp = await supabase
+          // Optimized seeding logic for Dev accounts:
+          // Check existence first because .update().eq() doesn't error on 0 rows
+          const { data: existingSeed } = await supabase
             .from('weddings')
-            .update(seedPayload)
-            .eq('user_id', user.id);
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
 
-          if ((seedUp as any).error && ((seedUp as any).error.message || '').includes('no rows')) {
+          if (!existingSeed) {
+            console.log('🌱 Creating new seeded wedding for dev...');
             await supabase.from('weddings').insert(seedPayload);
+          } else {
+            console.log('🔄 Updating existing seeded wedding...');
+            await supabase.from('weddings').update(seedPayload).eq('user_id', user.id);
           }
 
           // Now fetch the data fresh (after upsert)
