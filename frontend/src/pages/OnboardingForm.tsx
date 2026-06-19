@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../supabaseClient';
 
 const TEMPLATES = [
   { id: 'classic-ivory',    name: 'Classic Ivory',     accent: '#b07f56', bg: '#faf4eb' },
@@ -39,7 +38,6 @@ export default function OnboardingForm() {
   const plan = (location.state as any)?.plan || 'essential';
 
   const [step, setStep] = useState(0);
-  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     partnerA: '', partnerB: '',
     date: '', venue: '', message: '',
@@ -47,67 +45,6 @@ export default function OnboardingForm() {
   });
 
   const set = (key: string, val: string) => setForm(f => ({ ...f, [key]: val }));
-
-  // ── On mount: check if returning from a successful PayMongo payment ──
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('payment') !== 'success') return;
-
-    const saved = localStorage.getItem('onboarding_form');
-    const savedPlan = localStorage.getItem('onboarding_plan');
-    if (!saved) return;
-
-    const parsedForm = JSON.parse(saved);
-    setSaving(true);
-
-    const saveAfterPayment = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { navigate('/login'); return; }
-
-      const coupleName = `${parsedForm.partnerA} & ${parsedForm.partnerB}`;
-      const slug = toSlug(coupleName);
-
-      // Check if a wedding record already exists
-      const { data: existing } = await supabase
-        .from('weddings')
-        .select('id, subscription_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (existing) {
-        // Update existing record
-        await supabase.from('weddings').update({
-          couple_names: coupleName,
-          wedding_date: parsedForm.date,
-          venue:        parsedForm.venue,
-          description:  parsedForm.message,
-          custom_url:   slug,
-          is_published: true,
-          title:        coupleName + ' Wedding',
-        }).eq('user_id', user.id);
-      } else {
-        // Insert new record - subscription_id can be null for dev accounts
-        await supabase.from('weddings').insert({
-          user_id:         user.id,
-          couple_names:    coupleName,
-          wedding_date:    parsedForm.date,
-          venue:           parsedForm.venue,
-          description:     parsedForm.message,
-          custom_url:      slug,
-          is_published:    true,
-          title:           coupleName + ' Wedding',
-        });
-      }
-
-      // Clean up localStorage
-      localStorage.removeItem('onboarding_form');
-      localStorage.removeItem('onboarding_plan');
-
-      navigate('/dashboard');
-    };
-
-    saveAfterPayment();
-  }, []);
 
   const inputStyle = {
     width: '100%', padding: '13px 16px', borderRadius: '12px',

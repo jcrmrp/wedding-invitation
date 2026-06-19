@@ -121,6 +121,82 @@ console.log('📡 Fetching wedding data for user:', user.id);
         setDbRecord(null);
       }
 
+      // Check if returning from a successful PayMongo payment
+      const params = new URLSearchParams(window.location.search);
+      const paymentSuccess = params.get('payment') === 'success';
+      const savedForm = localStorage.getItem('onboarding_form');
+      const savedPlan = localStorage.getItem('onboarding_plan');
+
+      // Handle post-payment wedding update (for placeholder record or no record)
+      if (paymentSuccess && savedForm && !weddingError) {
+        console.log('✅ Payment successful, updating wedding record...');
+        const parsedForm = JSON.parse(savedForm);
+        const plan = savedPlan || 'essential';
+        const coupleName = `${parsedForm.partnerA} & ${parsedForm.partnerB}`;
+        const slug = toSlug(coupleName);
+
+        // Update existing wedding record (placeholder from Register) or create new one
+        if (weddingData && weddingData.length > 0) {
+          await supabase.from('weddings').update({
+            couple_names: coupleName,
+            wedding_date: parsedForm.date,
+            venue: parsedForm.venue,
+            description: parsedForm.message,
+            custom_url: slug,
+            is_published: true,
+            title: coupleName + ' Wedding',
+            plan: plan,
+          }).eq('user_id', user.id);
+        } else {
+          await supabase.from('weddings').insert({
+            user_id: user.id,
+            couple_names: coupleName,
+            wedding_date: parsedForm.date,
+            venue: parsedForm.venue,
+            description: parsedForm.message,
+            custom_url: slug,
+            is_published: true,
+            title: coupleName + ' Wedding',
+            plan: plan,
+          });
+        }
+
+        localStorage.removeItem('onboarding_form');
+        localStorage.removeItem('onboarding_plan');
+
+        // Clean up URL params to prevent reprocessing on refresh
+        window.history.replaceState({}, '', '/dashboard');
+
+        // Fetch the updated/created record
+        const { data: newData } = await supabase
+          .from('weddings')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (newData && newData.length > 0) {
+          setDbRecord(newData[0]);
+          setInvitationData({
+            names: newData[0].couple_names || '',
+            date: newData[0].wedding_date || '',
+            venue: newData[0].venue || '',
+            state: newData[0].state || '',
+            message: newData[0].description || '',
+            dressCode: newData[0].dress_code || '',
+            story: newData[0].story || '',
+            musicUrl: newData[0].music_url || '',
+            liveStreamUrl: newData[0].live_stream_url || '',
+            isGuestPhotoWallEnabled: newData[0].guest_photo_wall_enabled || false,
+            isPhotoboothEnabled: newData[0].photobooth_enabled || false,
+            entourage: newData[0].entourage || {},
+          });
+          setCurrentPlan(plan);
+        }
+        setLoading(false);
+        return;
+      }
+
       // ONLY seed if there is absolutely NO data
       if ((!weddingData || weddingData.length === 0) && !weddingError) {
         console.log('⚠️ No data found, checking if dev...');

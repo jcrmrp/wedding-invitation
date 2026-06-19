@@ -904,6 +904,18 @@ function StorySection({
   const isDraggingRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const nextPage = () => {
+    if (currentPage < segments.length - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') {
@@ -1002,20 +1014,7 @@ function StorySection({
     "https://picsum.photos/seed/11/800/600",
     "https://picsum.photos/seed/12/800/600"
   ];
-  
 
-
-  const nextPage = () => {
-    if (currentPage < segments.length - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const prevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
 
   return (
     <motion.div 

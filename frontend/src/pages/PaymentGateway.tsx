@@ -1,13 +1,15 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
+import api from '../services/api';
 
-const PLAN_LABELS: Record<string, { name: string; price: string; cycle: string; accent: string; paymongoUrl: string }> = {
-  essential:      { name: 'The Essential Plan',             price: '₱500',    cycle: 'per month', accent: '#b07f56', paymongoUrl: 'https://pm.link/org-QqafaX6guJCnHrDsNKpcNB8W/test/OYPgFUZ' },
-  storyteller:    { name: 'The Storyteller Plan',           price: '₱700',    cycle: 'per month', accent: '#7a5b7d', paymongoUrl: 'https://pm.link/org-QqafaX6guJCnHrDsNKpcNB8W/test/BOsDYQ0' },
-  'keepsake-20':  { name: 'The Keepsake Plan — 20 images',  price: '₱5,000',  cycle: 'per year',  accent: '#c68a4f', paymongoUrl: 'https://pm.link/org-QqafaX6guJCnHrDsNKpcNB8W/test/udC0iNx' },
-  'keepsake-50':  { name: 'The Keepsake Plan — 50 images',  price: '₱6,000',  cycle: 'per year',  accent: '#c68a4f', paymongoUrl: 'https://pm.link/org-QqafaX6guJCnHrDsNKpcNB8W/test/aXseiVK' },
-  'keepsake-100': { name: 'The Keepsake Plan — 100 images', price: '₱7,000',  cycle: 'per year',  accent: '#c68a4f', paymongoUrl: 'https://pm.link/org-QqafaX6guJCnHrDsNKpcNB8W/test/Nxa02KC' },
-  'keepsake-200': { name: 'The Keepsake Plan — 200 images', price: '₱10,000', cycle: 'per year',  accent: '#c68a4f', paymongoUrl: 'https://pm.link/org-QqafaX6guJCnHrDsNKpcNB8W/test/1r7v0ZA' },
+const PLAN_PRICES: Record<string, { name: string; price: string; cycle: string; accent: string }> = {
+  essential:      { name: 'The Essential Plan',             price: '₱500',    cycle: 'per month', accent: '#b07f56' },
+  storyteller:    { name: 'The Storyteller Plan',           price: '₱700',    cycle: 'per month', accent: '#7a5b7d' },
+  'keepsake-20':  { name: 'The Keepsake Plan — 20 images',  price: '₱5,000',  cycle: 'per year',  accent: '#c68a4f' },
+  'keepsake-50':  { name: 'The Keepsake Plan — 50 images',  price: '₱6,000',  cycle: 'per year',  accent: '#c68a4f' },
+  'keepsake-100': { name: 'The Keepsake Plan — 100 images', price: '₱7,000',  cycle: 'per year',  accent: '#c68a4f' },
+  'keepsake-200': { name: 'The Keepsake Plan — 200 images', price: '₱10,000', cycle: 'per year',  accent: '#c68a4f' },
 };
 
 export default function PaymentGateway() {
@@ -16,10 +18,23 @@ export default function PaymentGateway() {
 
   const plan = (location.state as any)?.plan || 'essential';
   const form = (location.state as any)?.form;
-  const planInfo = PLAN_LABELS[plan] || PLAN_LABELS.essential;
+  const planInfo = PLAN_PRICES[plan] || PLAN_PRICES.essential;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleCheckout = () => {
-    window.location.href = planInfo.paymongoUrl;
+  const handleCheckout = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await api.post('/functions/create-checkout', { tier: plan });
+      const checkoutUrl = response.data.url;
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || err.message || 'Failed to create checkout session');
+      setLoading(false);
+    }
   };
 
   return (
@@ -81,19 +96,25 @@ export default function PaymentGateway() {
           )}
         </div>
 
-        <motion.button
-          whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-          onClick={handleCheckout}
-          style={{
-            width: '100%', padding: '15px', borderRadius: '14px', border: 'none',
-            background: planInfo.accent, color: '#ffffff', fontSize: '0.9rem',
-            fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-            cursor: 'pointer', fontFamily: 'inherit',
-            boxShadow: `0 6px 20px rgba(0,0,0,0.15)`, transition: 'opacity 0.2s',
-          }}
-        >
-          Pay {planInfo.price} via PayMongo →
-        </motion.button>
+<motion.button
+           whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+           onClick={handleCheckout}
+           disabled={loading}
+           style={{
+             width: '100%', padding: '15px', borderRadius: '14px', border: 'none',
+             background: planInfo.accent, color: '#ffffff', fontSize: '0.9rem',
+             fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+             cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+             boxShadow: `0 6px 20px rgba(0,0,0,0.15)`, transition: 'opacity 0.2s',
+             opacity: loading ? 0.7 : 1,
+           }}
+         >
+           {loading ? 'Preparing checkout…' : `Pay ${planInfo.price} via PayMongo →`}
+         </motion.button>
+
+         {error && (
+           <p style={{ color: '#c0392b', fontSize: '0.82rem', margin: '12px 0 0' }}>{error}</p>
+         )}
 
         <button
           onClick={() => navigate(-1)}

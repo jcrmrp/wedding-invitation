@@ -80,7 +80,7 @@ serve(async (req) => {
               quantity: 1,
             }],
             payment_method_types: ['gcash', 'card'],
-            success_url: `${origin}/dashboard`,
+            success_url: `${origin}/dashboard?payment=success`,
             cancel_url:  `${origin}/pricing`,
           },
         },
