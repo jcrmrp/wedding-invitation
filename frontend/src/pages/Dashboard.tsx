@@ -9,7 +9,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 // ── Dev accounts that bypass payment ─────────────────────────────────────────
 // Add your email(s) here. These accounts skip onboarding and can set any plan.
 const DEV_EMAILS: string[] = [
-   'mr.johnlester.domingo@gmail.com'
+   'mr.johnlester.domingo@gmail.com',
+   'panariganchristina@gmail.com'
 ];
 
 const PLANS = [

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import Home from '../Home';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 
 type WeddingRecord = {
   couple_names?: string;
@@ -69,6 +70,30 @@ function PublicInvitation() {
     };
 
     fetchWedding();
+
+    // Set up real-time subscription for live updates
+    const channel = supabase
+      .channel(`wedding-${coupleName}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'weddings',
+          filter: `custom_url=eq.${coupleName}`,
+        },
+        (payload) => {
+          console.log('🔄 Real-time update received:', payload);
+          if (payload.new) {
+            setWedding(payload.new as WeddingRecord);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [coupleName]);
 
   const isAnniversary = useMemo(() => {
@@ -143,8 +168,33 @@ function PublicInvitation() {
     names: 'Alex & Jordan', date: '2026-10-15', venue: 'Your Venue Here', message: '', story: '', musicUrl: '', liveStreamUrl: '', custom_url: '', isGuestPhotoWallEnabled: false, isPhotoboothEnabled: false, entourage: {},
   };
 
+  // Dynamic Open Graph meta tags for social media preview
+  const pageTitle = invitationData.names ? `${invitationData.names} Wedding` : 'Wedding Invitation';
+  const pageDescription = invitationData.message || `Join us in celebrating ${invitationData.names}'s special day.`;
+  const pageImage = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80';
+  const pageUrl = `${window.location.origin}/invite/${coupleName}`;
+
   return (
-    <div
+    <>
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:image" content={pageImage} />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:site_name" content="Luxora" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content={pageImage} />
+      </Helmet>
+      <div
       style={{
         minHeight: '100vh',
         width: '100%',
@@ -503,6 +553,7 @@ function PublicInvitation() {
         )}
       </AnimatePresence>
     </div>
+    </>
   );
 }
 
