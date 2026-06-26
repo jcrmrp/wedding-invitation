@@ -26,7 +26,7 @@ export default function PaymentGateway() {
     setLoading(true);
     setError('');
     try {
-      const response = await api.post('/functions/create-checkout', { tier: plan });
+      const response = await api.post('functions/create-checkout', { tier: plan });
       const checkoutUrl = response.data.url;
       if (checkoutUrl) {
         window.location.href = checkoutUrl;

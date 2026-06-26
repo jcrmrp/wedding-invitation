@@ -73,6 +73,7 @@ function Dashboard() {
   const [guestPhotoWallEnabled, setGuestPhotoWallEnabled] = useState(false);
   const [photoboothEnabled, setPhotoboothEnabled] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   const isDev = DEV_EMAILS.includes(userEmail);
 
@@ -194,6 +195,7 @@ console.log('📡 Fetching wedding data for user:', user.id);
           setCurrentPlan(plan);
         }
         setLoading(false);
+        setShowPaymentSuccess(true);
         return;
       }
 
@@ -483,6 +485,41 @@ console.log('📡 Fetching wedding data for user:', user.id);
 
   return (
     <div style={{ padding: '20px', background: '#faf4eb', minHeight: '100vh', position: 'relative' }}>
+      {showPaymentSuccess && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            maxWidth: '1400px', margin: '0 auto 16px', padding: '16px 24px',
+            background: '#f0f7f2', border: '1.5px solid #4a7c59', borderRadius: '14px',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '1.5rem' }}>🎉</span>
+            <div>
+              <div style={{ fontWeight: 700, color: '#4a3f35', fontSize: '1rem' }}>Payment successful! Your invitation is ready.</div>
+              <div style={{ fontSize: '0.82rem', color: '#7b6a5d' }}>Share the link with guests or keep editing your details below.</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <a href={liveUrl} target="_blank" rel="noopener noreferrer" style={{
+              padding: '10px 20px', borderRadius: '10px', border: 'none',
+              background: '#4a7c59', color: '#fff', textDecoration: 'none',
+              fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+            }}>
+              View Live Invitation →
+            </a>
+            <button onClick={() => setShowPaymentSuccess(false)} style={{
+              padding: '10px 20px', borderRadius: '10px', border: '1.5px solid #4a7c59',
+              background: 'transparent', color: '#4a7c59', cursor: 'pointer',
+              fontWeight: 600, fontSize: '0.85rem',
+            }}>
+              Dismiss
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Envelope Animation Overlay */}
       <AnimatePresence>

@@ -72,24 +72,6 @@ export default function OnboardingForm() {
     navigate('/payment', { state: { plan, form } });
   };
 
-  // Show a saving screen while processing the post-payment redirect
-  if (saving) {
-    return (
-      <div style={{
-        minHeight: '100vh', display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        background: 'linear-gradient(135deg, #faf4eb 0%, #f9ece9 100%)',
-        fontFamily: '"Playfair Display", Georgia, serif', gap: '16px',
-      }}>
-        <motion.div
-          animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-          style={{ width: '36px', height: '36px', borderRadius: '50%', border: '3px solid #e5d9ce', borderTopColor: '#b07f56' }}
-        />
-        <p style={{ color: '#7b6a5d', fontSize: '1rem', margin: 0 }}>Setting up your invitation…</p>
-      </div>
-    );
-  }
-
   return (
     <div style={{
       minHeight: '100vh', background: 'linear-gradient(135deg, #faf4eb 0%, #f9ece9 100%)',
