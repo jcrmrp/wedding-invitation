@@ -49,16 +49,40 @@ export default function Login() {
     setError('');
     const redirectUrl = `${window.location.origin}/dashboard`;
     console.log('🔐 Google login redirect URL:', redirectUrl);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { 
-        redirectTo: redirectUrl,
-      },
-    });
-    if (error) { 
-      console.error('❌ Google login error:', error);
-      setError(error.message); 
-      setGoogleLoading(false); 
+    
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { 
+          redirectTo: redirectUrl,
+        },
+      });
+      
+      if (error) {
+        console.error('❌ Google login error:', error);
+        
+        // Provide helpful error messages
+        let userFriendlyMessage = error.message;
+        
+        if (error.message.includes('redirect_uri_mismatch')) {
+          userFriendlyMessage = 'Redirect URL mismatch. Check GOOGLE_OAUTH_SETUP.md for fix.';
+        } else if (error.message.includes('access_blocked')) {
+          userFriendlyMessage = 'Google OAuth not configured. Follow GOOGLE_OAUTH_SETUP.md';
+        } else if (error.message.includes('provider') && error.message.includes('not enabled')) {
+          userFriendlyMessage = 'Google provider not enabled in Supabase. Check SETUP_GUIDE.md';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          userFriendlyMessage = 'Cannot connect to Supabase. Check if project is active (not paused). See SETUP_GUIDE.md';
+        } else if (error.message.includes('invalid') && error.message.includes('key')) {
+          userFriendlyMessage = 'Invalid Supabase credentials. Check your .env files.';
+        }
+        
+        setError(userFriendlyMessage);
+        setGoogleLoading(false);
+      }
+    } catch (err) {
+      console.error('❌ Google login exception:', err);
+      setError('Login failed. Check browser console for details.');
+      setGoogleLoading(false);
     }
   };
 
