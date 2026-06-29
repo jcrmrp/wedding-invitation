@@ -27,7 +27,8 @@
     "@types/qrcode.react": "^1.0.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.2",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.7.0",
     "vite": "^6.0.0"
   }
 }
