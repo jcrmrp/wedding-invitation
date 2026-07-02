@@ -138,8 +138,11 @@ console.log('📡 Fetching wedding data for user:', user.id);
         const slug = toSlug(coupleName);
 
         // Update existing wedding record (placeholder from Register) or create new one
+        let upsertError: any = null;
+        let finalSlug = slug;
+        
         if (weddingData && weddingData.length > 0) {
-          await supabase.from('weddings').update({
+          const result = await supabase.from('weddings').update({
             couple_names: coupleName,
             wedding_date: parsedForm.date,
             venue: parsedForm.venue,
@@ -149,8 +152,10 @@ console.log('📡 Fetching wedding data for user:', user.id);
             title: coupleName + ' Wedding',
             plan: plan,
           }).eq('user_id', user.id);
+          upsertError = result.error;
         } else {
-          await supabase.from('weddings').insert({
+          // Try to insert with the slug, if it fails due to duplicate, append user ID
+          let result = await supabase.from('weddings').insert({
             user_id: user.id,
             couple_names: coupleName,
             wedding_date: parsedForm.date,
@@ -161,6 +166,32 @@ console.log('📡 Fetching wedding data for user:', user.id);
             title: coupleName + ' Wedding',
             plan: plan,
           });
+          
+          // If duplicate slug error, retry with user ID appended
+          if (result.error && result.error.code === '23505') {
+            console.log('⚠️ Slug conflict detected, appending user ID to make it unique');
+            finalSlug = `${slug}-${user.id.substring(0, 8)}`;
+            result = await supabase.from('weddings').insert({
+              user_id: user.id,
+              couple_names: coupleName,
+              wedding_date: parsedForm.date,
+              venue: parsedForm.venue,
+              description: parsedForm.message,
+              custom_url: finalSlug,
+              is_published: true,
+              title: coupleName + ' Wedding',
+              plan: plan,
+            });
+          }
+          
+          upsertError = result.error;
+        }
+
+        if (upsertError) {
+          console.error('❌ Failed to create/update wedding record:', upsertError);
+          alert('Failed to create your invitation. Please try again or contact support if the issue persists.');
+          setLoading(false);
+          return;
         }
 
         localStorage.removeItem('onboarding_form');
@@ -194,6 +225,12 @@ console.log('📡 Fetching wedding data for user:', user.id);
             entourage: newData[0].entourage || {},
           });
           setCurrentPlan(plan);
+          
+          // If slug was modified due to conflict, update the URL in the address bar
+          if (finalSlug !== slug) {
+            console.log('ℹ️ Slug was adjusted to:', finalSlug);
+            window.history.replaceState({}, '', `/dashboard?payment=success&slug=${finalSlug}`);
+          }
         }
         setLoading(false);
         setShowPaymentSuccess(true);
@@ -481,7 +518,8 @@ console.log('📡 Fetching wedding data for user:', user.id);
     </div>
   );
 
-  const liveSlug = toSlug(invitationData.names);
+  // Use the actual custom_url from database if available, otherwise compute from names
+  const liveSlug = dbRecord?.custom_url || toSlug(invitationData.names);
   const liveUrl  = `/invite/${liveSlug}`;
 
   return (
